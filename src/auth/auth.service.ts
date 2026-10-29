@@ -13,11 +13,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 @Injectable()
 export class AuthService {
   private readonly googleClient: OAuth2Client;
-
   constructor(private readonly prisma: PrismaService) {
     this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
   }
-
   private createToken(userId: number) {
     const secret = process.env.JWT_SECRET;
 
@@ -29,10 +27,8 @@ export class AuthService {
       expiresIn: '7d',
     });
   }
-
   private sanitizeUser(user: any) {
     if (!user) return null;
-
     return {
       id: String(user.id),
       name: user.name,
@@ -41,11 +37,9 @@ export class AuthService {
       emailVerified: Boolean(user.emailVerified),
     };
   }
-
   private isValidEmail(email: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
-
   async register(name: unknown, email: unknown, password: unknown) {
     if (
       typeof name !== 'string' ||
@@ -54,44 +48,33 @@ export class AuthService {
     ) {
       throw new BadRequestException('Name, email and password must be strings');
     }
-
     const trimmedName = name.trim();
     const normalizedEmail = email.toLowerCase().trim();
-
     if (!trimmedName || !normalizedEmail || !password) {
       throw new BadRequestException('Name, email and password are required');
     }
-
     if (trimmedName.length < 2) {
       throw new BadRequestException('Name must be at least 2 characters');
     }
-
     if (trimmedName.length > 100) {
       throw new BadRequestException('Name is too long');
     }
-
     if (!this.isValidEmail(normalizedEmail)) {
       throw new BadRequestException('Please enter a valid email address');
     }
-
     if (password.length < 6) {
       throw new BadRequestException('Password must be at least 6 characters');
     }
-
     if (password.length > 128) {
       throw new BadRequestException('Password is too long');
     }
-
     const existingUser = await this.prisma.client.orm.public.User.where({
       email: normalizedEmail,
     }).first();
-
     if (existingUser) {
       throw new ConflictException('An account with this email already exists');
     }
-
     const passwordHash = await bcrypt.hash(password, 12);
-
     const user = await this.prisma.client.orm.public.User.create({
       name: trimmedName,
       email: normalizedEmail,
@@ -99,7 +82,6 @@ export class AuthService {
       avatar: null,
       emailVerified: false,
     });
-
     return {
       token: this.createToken(user.id),
       user: this.sanitizeUser(user),
