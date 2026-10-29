@@ -1,0 +1,49 @@
+// use prisma-8
+model User {
+  id            Int                        @id @default(autoincrement())
+  name          String
+  email         String                     @unique
+  passwordHash  String?
+  avatar        String?
+  emailVerified Boolean                    @default(false)
+  createdAt     TimestamptzString          @default(now())
+  updatedAt     temporal.updatedAtString()
+
+  providers     AuthProvider[]
+  conversations Conversation[]
+}
+
+model AuthProvider {
+  id         Int    @id @default(autoincrement())
+  provider   String
+  providerId String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+
+  @@index([userId])
+  @@unique([provider, providerId])
+}
+
+model Conversation {
+  id        Int                        @id @default(autoincrement())
+  title     String?
+  model     String?
+  user      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  messages  Message[]
+  createdAt TimestamptzString          @default(now())
+  updatedAt temporal.updatedAtString()
+
+  @@index([userId, updatedAt])
+}
+
+model Message {
+  id             Int               @id @default(autoincrement())
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId Int
+  role           String
+  content        String
+  createdAt      TimestamptzString @default(now())
+
+  @@index([conversationId, createdAt])
+}
